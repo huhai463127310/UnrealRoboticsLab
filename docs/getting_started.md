@@ -40,8 +40,9 @@ This is **not required** if you only use the plugin through the editor, Blueprin
 ### From MJCF XML
 
 1. Get a robot XML (e.g., from [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie)).
-2. Drag the XML into the Unreal Content Browser. The importer auto-runs `Scripts/clean_meshes.py` to convert meshes to GLB (falls back gracefully if Python is missing).
-3. A Blueprint is auto-generated with all joints, bodies, actuators, and sensors as components.
+2. Install [trimesh](https://trimesh.org/install.html) with `pip install trimesh` (using the system's default Python environment), otherwise you will encounter errors in the Unreal Editor when executing step 3; after installing trimesh, you can verify that Scripts/clean_meshes.py works properly by running `python {Your Unreal Project dir}\Plugins\UnrealRoboticsLab\Scripts\clean_meshes.py  {Your mujoco_menagerie dir} \unitree_g1\g1_with_hands.xml`.
+3. Drag the XML into the Unreal Content Browser. The importer auto-runs `Scripts/clean_meshes.py` to convert meshes to GLB (falls back gracefully if Python is missing).
+4. A Blueprint is auto-generated with all joints, bodies, actuators, and sensors as components.
 
 ### Quick Convert (Static Meshes)
 
