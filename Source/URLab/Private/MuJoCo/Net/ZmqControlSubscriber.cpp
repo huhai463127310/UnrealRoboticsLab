@@ -294,6 +294,9 @@ void UZmqControlSubscriber::PreStep(mjModel* m, mjData* d)
 		int size = zmq_msg_size(&payload_msg);
 		char* data = (char*)zmq_msg_data(&payload_msg);
 
+		// Log all received messages
+		UE_LOG(LogURLabNet, Log, TEXT("ZmqControl: Received message with Topic: '%s', Payload size: %d bytes"), *Topic, size);
+
 		// --- Handle set_gains messages ---
 		if (Topic.Contains(TEXT("/set_gains")))
 		{
@@ -305,14 +308,17 @@ void UZmqControlSubscriber::PreStep(mjModel* m, mjData* d)
 
 			TSharedPtr<FJsonObject> Json;
 			TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonStr);
+			UE_LOG(LogURLabNet, Log, TEXT("ZmqControl: Received set_gains JSON: %s"), *JsonStr);
 			if (FJsonSerializer::Deserialize(Reader, Json) && Json.IsValid())
 			{
+				
 				AAMjManager* Manager = Cast<AAMjManager>(GetOwner());
 				if (Manager)
 				{
 					for (AMjArticulation* Art : Manager->GetAllArticulations())
 					{
 						if (!Art || !Topic.Contains(Art->GetName())) continue;
+						UE_LOG(LogURLabNet, Log, TEXT("ZmqControl: Processing set_gains for Articulation '%s', Topic: '%s'"), *Art->GetName(), *Topic);
 						UMjPDController* PDCtrl = Art->FindComponentByClass<UMjPDController>();
 						if (!PDCtrl) continue;
 
@@ -388,7 +394,11 @@ void UZmqControlSubscriber::PreStep(mjModel* m, mjData* d)
 
 						if (UMjActuator** ActuatorPtr = ActuatorComponentCache.Find(Idx))
 						{
-							if (*ActuatorPtr) (*ActuatorPtr)->SetNetworkControl(Value);
+							if (*ActuatorPtr)
+							{
+								UE_LOG(LogURLabNet, Log, TEXT("ZmqControl: Joint ID=%d, Name=%s, Value=%.4f"), Idx, *((*ActuatorPtr)->GetMjName()), Value);
+								(*ActuatorPtr)->SetNetworkControl(Value);
+							}
 						}
 						else if (bShouldLog)
 						{
@@ -402,6 +412,13 @@ void UZmqControlSubscriber::PreStep(mjModel* m, mjData* d)
 					if (bShouldLog)
 					{
 						UE_LOG(LogURLabNet, Log, TEXT("ZmqControl: Applied %d controls (first val: %.4f, cache size: %d)"), NumControls, NumControls > 0 ? *(float*)(data + 8) : 0.0f, ActuatorComponentCache.Num());
+						// print joint names and values
+						for (int i = 0; i < NumControls; ++i)
+						{
+							int32 Idx = *(int32*)(data + 4 + i * 8);
+							float Value = *(float*)(data + 8 + i * 8);
+							UE_LOG(LogURLabNet, Log, TEXT("ZmqControl: Joint %d = %.4f"), Idx, Value);
+						}
 					}
 				}
 				else

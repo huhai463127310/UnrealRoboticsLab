@@ -139,3 +139,5 @@ MUJOCO_LOG.TXT
 *.log
 url_proj_crash.log
 build.log
+
+*.glb
